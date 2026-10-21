@@ -17,8 +17,14 @@ import datetime
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
 
-from a2ui.basic_catalog.provider import BasicCatalog
-from a2ui.schema.manager import A2uiSchemaManager
+try:
+    from a2ui.basic_catalog.provider import BasicCatalog
+    from a2ui.schema.manager import A2uiSchemaManager
+except ImportError:
+    try:
+        from .a2ui_utils import A2uiSchemaManager, BasicCatalog
+    except ImportError:
+        from a2ui_utils import A2uiSchemaManager, BasicCatalog
 from google.adk.agents import Agent
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.apps import App

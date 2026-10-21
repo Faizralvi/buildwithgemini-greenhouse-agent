@@ -24,6 +24,7 @@ Robustness notes (why this file is more than a one-liner):
 
 import json
 import re
+from typing import Any, Optional
 
 from google.genai import types
 from google.adk.agents.callback_context import CallbackContext
@@ -257,3 +258,56 @@ def a2ui_callback(
         )
 
     return None
+
+
+class BasicCatalog:
+    """Catalog configuration provider for A2UI standard components."""
+
+    @classmethod
+    def get_config(cls, version: str = "0.8") -> dict[str, Any]:
+        return {"catalog": "basic", "version": version}
+
+
+class A2uiSchemaManager:
+    """Manages A2UI schemas and generates system instructions for LLM agents."""
+
+    def __init__(self, version: str = "0.8", catalogs: list[Any] | None = None):
+        self.version = version
+        self.catalogs = catalogs or []
+
+    def generate_system_prompt(
+        self,
+        role_description: str,
+        workflow_description: str = "",
+        ui_description: str = "",
+        include_schema: bool = True,
+        include_examples: bool = True,
+        **kwargs: Any,
+    ) -> str:
+        parts: list[str] = [role_description]
+
+        if workflow_description:
+            parts.append(f"## Workflow Description:\n{workflow_description}")
+
+        if ui_description:
+            parts.append(f"## UI Description:\n{ui_description}")
+
+        if include_schema:
+            try:
+                from .a2ui_schema_data import SERVER_TO_CLIENT_SCHEMA_V08, STANDARD_CATALOG_V08
+                s2c_str = SERVER_TO_CLIENT_SCHEMA_V08
+                cat_str = STANDARD_CATALOG_V08
+            except Exception:
+                s2c_str = "{}"
+                cat_str = "{}"
+
+            schema_instruction = (
+                "<!-- A2UI_SCHEMA_START -->\n\n"
+                f"### Server To Client Schema:\n{s2c_str}\n\n"
+                f"### Catalog Schema:\n{cat_str}\n\n"
+                "<!-- A2UI_SCHEMA_END -->"
+            )
+            parts.append(schema_instruction)
+
+        return "\n\n".join(parts)
+
